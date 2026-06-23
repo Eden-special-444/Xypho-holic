@@ -5,8 +5,8 @@ const path = require("path");
 
 module.exports = {
   config: {
-    name: "latthi",
-    aliases: ["latthi"],
+    name: "lathi",
+    aliases: ["lathi"," usta","kik"],
     version: "1.2",
     author: "eden",
     countDown: 5,
