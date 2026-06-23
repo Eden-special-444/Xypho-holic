@@ -82,7 +82,7 @@ module.exports = {
 💻 ᴍᴇᴍᴏʀʏ : ${memoryUsage} MB
 👥 ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ : ${totalUsers}
 💬 ᴛᴏᴛᴀʟ ᴛʜʀᴇᴀᴅꜱ : ${totalThreads}
-👑 ᴏᴡɴᴇʀ  : Mohammad Alamin
+👑 ᴏᴡɴᴇʀ  : 𝐒𝐚𝐤𝐮 𝐁𝐞𝐢𝐧𝐠'𝐝𝐞𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐈𝐈 
       `.trim();
 
       await delay(300);
