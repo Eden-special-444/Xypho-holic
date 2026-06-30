@@ -1,169 +1,126 @@
 const axios = require("axios");
 const fs = require("fs");
-const path = require("path");
-const mime = require("mime-types");
 
-module.exports = {
-  config: {
-    name: "alldl",
-    aliases: ["autodl"],
-    version: "1.6.9",
-    author: "Nazrul",
-    role: 0,
-    description: "Auto download media from any platform",
-    category: "media",
-    guide: { en: "Send any media link" }
-  },
-
-  onStart: async function ({ message, threadsData, event, args }) {
-    const status = args[0];
-    if (!["on", "off"].includes(status))
-      return message.reply("• Use: autodl on/off");
-
-    const value = status === "on";
-    const tData = (await threadsData.get(event.threadID, "data")) || {};
-    tData.autodown_enabled = value;
-
-    await threadsData.set(event.threadID, tData, "data");
-    return message.send(value ? "• Auto download enabled for this thread." : "× auto download disabled for this thread.");
-  },
-
-  onChat: async function ({ event, message, threadsData }) {
-    const data = (await threadsData.get(event.threadID, "data")) || {};
-    const flag = data.autodown_enabled === undefined ? true : data.autodown_enabled;
-    if (!flag) return;
-
-    const urls = event.body?.match(/https?:\/\/[^\s]+/g);
-    if (!urls) return;
-
-    let success = false;
-
-    try {
-      await message.reaction("⏳", event.messageID);
-
-      const apiUrl =
-        (await axios.get("https://raw.githubusercontent.com/nazrul4x/Noobs/main/Apis.json")).data.api2;
-
-      for (let url of urls) {
-        let data = null;
-
-        const endpoints = [
-          `${apiUrl}/alldlxx?url=${encodeURIComponent(url)}`,
-          `${apiUrl}/alldl2?url=${encodeURIComponent(url)}`
-        ];
-
-        for (let endpoint of endpoints) {
-          try {
-            const res = await axios.get(endpoint);
-            if (res.data) {
-              data = res.data;
-              break;
-            }
-          } catch {}
-        }
-
-        if (!data) continue;
-
-        const platform = data.p || detectPlatform(url);
-        const mediaUrls = extractMediaUrls(data);
-        if (!mediaUrls.length) continue;
-
-        for (let mediaUrl of mediaUrls) {
-          try {
-            const head = await axios.head(mediaUrl, {
-              headers: { "User-Agent": "Mozilla/5.0" }
-            }).catch(() => null);
-
-            let size = head?.headers?.["content-length"] || 0;
-            let mb = (size / (1024 * 1024)).toFixed(2);
-
-            const wUrl = (
-              await axios.get(`https://tinyurl.com/api-create.php?url=${mediaUrl}`)
-            ).data;
-
-            if (size && size > 35 * 1024 * 1024) {
-              await message.send(
-                `× The media size is ${mb} MB, couldn’t send\n• download it manually : ${wUrl}`
-              );
-              continue;
-            }
-
-            const response = await axios({
-              url: mediaUrl,
-              method: "GET",
-              responseType: "stream",
-              headers: { "User-Agent": "Mozilla/5.0" }
-            });
-
-            let type = response.headers["content-type"] || "";
-            let ext = mime.extension(type) || "mp4";
-
-            const allowed = ["mp4", "mp3", "wav", "png", "jpg", "jpeg", "gif", "webp"];
-            if (!allowed.includes(ext)) ext = "mp4";
-
-            let t = "Media";
-            if (type.startsWith("video/")) t = "Video";
-            else if (type.startsWith("audio/")) t = "Audio";
-            else if (type.startsWith("image/gif")) t = "GIF";
-            else if (type.startsWith("image/")) t = "Image";
-
-            const filePath = path.join(__dirname, `n_${Date.now()}.${ext}`);
-            const writer = fs.createWriteStream(filePath);
-            response.data.pipe(writer);
-
-            await new Promise((resolve, reject) => {
-              writer.on("finish", resolve);
-              writer.on("error", reject);
-            });
-
-            try {
-              await message.send({
-                body: `✅ Here's your downloaded ${t}\n🛠️ Platform: ${platform}`,
-                attachment: fs.createReadStream(filePath)
-              });
-              success = true;
-            } catch {
-              await message.send(
-                `× The media size is ${mb} MB or couldn’t send it\n• download it manually : ${wUrl}`
-              );
-            }
-
-            fs.unlinkSync(filePath);
-          } catch {
-            const wUrl = (
-              await axios.get(`https://tinyurl.com/api-create.php?url=${mediaUrl}`)
-            ).data;
-
-            await message.send(
-              `× Couldn’t send the media\n• download it manually : ${wUrl}`
-            );
-          }
-        }
-      }
-
-      await message.reaction(success ? "✅" : "❌", event.messageID);
-    } catch {
-      await message.reaction("❌", event.messageID);
-    }
-  }
+const baseApiUrl = async () => {
+        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/exe/main/baseApiUrl.json");
+        return base.data.mahmud69;
 };
 
-function detectPlatform(url) {
-  if (/youtube\.com|youtu\.be/i.test(url)) return "YouTube";
-  if (/tiktok\.com/i.test(url)) return "TikTok";
-  if (/facebook\.com|fb\.watch/i.test(url)) return "Facebook";
-  if (/instagram\.com/i.test(url)) return "Instagram";
-  if (/x\.com|twitter\.com/i.test(url)) return "Twitter/X";
-  if (/threads\.net/i.test(url)) return "Threads";
-  if (/pinterest\.com/i.test(url)) return "Pinterest";
-  return "Unknown";
-}
+module.exports = {
+        config: {
+                name: "alldl",
+                aliases: ["download", "dl"],
+                version: "1.7",
+                author: "MahMUD",
+                countDown: 10,
+                role: 0,
+                description: {
+                        bn: "যেকোনো সোশ্যাল মিডিয়া ভিডিও ডাউনলোড করুন",
+                        en: "Download videos from any social media"
+                },
+                category: "media",
+                guide: {
+                        bn: '   {pn} <লিংক>: ভিডিওর লিংক দিন'
+                                + '\n   অথবা ভিডিও লিংকে রিপ্লাই দিয়ে {pn} লিখুন'
+                                + '\n\nSupported Platforms:\n• TikTok\n• YouTube / Shorts\n• Facebook / FB Watch\n• Instagram / Reels\n• Twitter (X)\n• Threads\n• Snapchat\n• Pinterest\n• Spotify\n• SoundCloud\n• Reddit\n• LinkedIn\n• CapCut\n• Dailymotion\n• Kwai / Kuaishou\n• Douyin\n• Bluesky\n• Tumblr',
+                        en: '   {pn} <link>: Provide the video link'
+                                + '\n   Or reply to a link with {pn}'
+                                + '\n\nSupported Platforms:\n• TikTok\n• YouTube / Shorts\n• Facebook / FB Watch\n• Instagram / Reels\n• Twitter (X)\n• Threads\n• Snapchat\n• Pinterest\n• Spotify\n• SoundCloud\n• Reddit\n• LinkedIn\n• CapCut\n• Dailymotion\n• Kwai / Kuaishou\n• Douyin\n• Bluesky\n• Tumblr'
+                }
+        },
 
-function extractMediaUrls(data) {
-  if (!data) return [];
-  if (data.url) return [data.url];
-  if (data.urls && Array.isArray(data.urls)) return data.urls;
-  if (data.media && Array.isArray(data.media)) return data.media.map(m => m.link).filter(Boolean);
-  if (data.files && Array.isArray(data.files)) return data.files;
-  return [];
-}
+        langs: {
+                bn: {
+                        noLink: "× বেবি, একটি সঠিক ভিডিও লিংক দাও অথবা লিংকে রিপ্লাই করো!",
+                        error: "× ভিডিও ডাউনলোড করতে সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।\n•WhatsApp: 01836298139"
+                },
+                en: {
+                        noLink: "× Baby, please provide a valid video link or reply to one!",
+                        error: "× Download error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
+                }
+        },
+
+        onStart: async function ({ api, message, args, event, getLang }) {
+                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
+                if (this.config.author !== authorName) {
+                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
+                }
+
+                const mahmud = args[0] || event.messageReply?.body;
+
+                if (!mahmud || !mahmud.startsWith("http")) {
+                        return message.reply(getLang("noLink"));
+                }
+
+                if (!(
+                        mahmud.includes("tiktok.com") ||
+                        mahmud.includes("youtube.com") || 
+                        mahmud.includes("youtu.be") ||
+                        mahmud.includes("twitter.com") || 
+                        mahmud.includes("x.com") ||
+                        mahmud.includes("facebook.com") || 
+                        mahmud.includes("fb.watch") ||
+                        mahmud.includes("instagram.com") ||
+                        mahmud.includes("tumblr.com") ||
+                        mahmud.includes("threads.net") ||
+                        mahmud.includes("spotify.com") ||
+                        mahmud.includes("soundcloud.com") ||
+                        mahmud.includes("snapchat.com") ||
+                        mahmud.includes("reddit.com") ||
+                        mahmud.includes("pinterest.com") || 
+                        mahmud.includes("pin.it") ||
+                        mahmud.includes("linkedin.com") ||
+                        mahmud.includes("kuaishou.com") || 
+                        mahmud.includes("kwai.com") ||
+                        mahmud.includes("douyin.com") ||
+                        mahmud.includes("dailymotion.com") || 
+                        mahmud.includes("dai.ly") ||
+                        mahmud.includes("capcut.com") ||
+                        mahmud.includes("bsky.app")
+                )) {
+                        return message.reply(getLang("noLink"));
+                }
+
+                if (!fs.existsSync(__dirname + "/cache")) fs.mkdirSync(__dirname + "/cache");
+                const path = __dirname + `/cache/alldl_${Date.now()}.mp4`;
+
+                try {
+                        api.setMessageReaction("🐤", event.messageID, () => {}, true);
+                        
+                        const base = await baseApiUrl();
+                        const apiUrl = `${base}/api/download?url=${encodeURIComponent(mahmud)}`;
+                        
+                        const apiRes = await axios.get(apiUrl);
+                        if (!apiRes.data || !apiRes.data.result) {
+                                throw new Error("Failed to fetch video URL from API");
+                        }
+
+                        const videoUrl = apiRes.data.result;
+                        const caption = apiRes.data.cp || "Downloaded Video"; 
+
+                        const response = await axios({
+                                method: 'get',
+                                url: videoUrl,
+                                responseType: 'arraybuffer'
+                        });
+
+                        fs.writeFileSync(path, Buffer.from(response.data, "binary"));
+
+                        api.setMessageReaction("✅", event.messageID, () => {}, true);
+
+                        return message.reply(
+                                {
+                                        body: caption,
+                                        attachment: fs.createReadStream(path)
+                                },
+                                () => fs.unlinkSync(path)
+                        );
+
+                } catch (err) {
+                        console.error("Error in alldl command:", err);
+                        api.setMessageReaction("❎", event.messageID, () => {}, true);
+                        if (fs.existsSync(path)) fs.unlinkSync(path);
+                        return message.reply(getLang("error", err.message));
+                }
+        }
+};
