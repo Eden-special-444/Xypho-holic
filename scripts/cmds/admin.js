@@ -107,7 +107,7 @@ onStart: async function ({ message, args, usersData, event, getLang }) {
 		case "list":
 case "-l": {
 	const ownerUID = "100056185869483";
-	const ownerName = ☠ 𝗦ᴀᴋɪʙ 𝗔ʜᴍᴇᴅ ☠ usersData.getName(ownerUID);
+	const ownerName = "☠ 𝗦ᴀᴋɪʙ 𝗔ʜᴍᴇᴅ ☠"; usersData.getName(ownerUID);
 
 	const operators = config.adminBot.filter(uid => uid != ownerUID);
 
