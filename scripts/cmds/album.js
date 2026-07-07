@@ -56,7 +56,7 @@ module.exports = {
                 try {
                         const apiBase = await mahmud();
 
-                        if (args[0] === "add") {
+                        if (args[0] "add") {
                                 if (!args[1] || event.type !== "message_reply" || !event.messageReply.attachments.length) return message.reply(getLang("noInput"));
                                 api.setMessageReaction("⏳", event.messageID, () => {}, true);
                                 const imgurRes = await axios.get(`${apiBase.replace(/\/$/, "")}/imgur?url=${encodeURIComponent(event.messageReply.attachments[0].url)}`);
