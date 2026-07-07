@@ -1,4 +1,4 @@
-const axios = require("axios"), fs = require("fs"), path = require("path");
+cst axios = require("axios"), fs = require("fs"), path = require("path");
 
 const mahmud = async () => {
         const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
